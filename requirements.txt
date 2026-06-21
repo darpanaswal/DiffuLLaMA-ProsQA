@@ -1,0 +1,11 @@
+torch==2.5.1
+transformers==4.44.2
+accelerate
+huggingface_hub
+pandas
+seaborn
+matplotlib
+requests
+python-dotenv
+datasets
+openai

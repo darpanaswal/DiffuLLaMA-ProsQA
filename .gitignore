@@ -168,3 +168,6 @@ saves/
 output/
 wandb/
 **__pycache__**
+diffu
+models
+runs

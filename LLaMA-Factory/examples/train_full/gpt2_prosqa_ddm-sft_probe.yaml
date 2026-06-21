@@ -1,0 +1,59 @@
+# LLaMA-Factory/examples/train_full/gpt2_prosqa_ddm-sft_probe.yaml
+#
+# VIABILITY PROBE: cheap run to test whether DiffuGPT-M can learn ProsQA CoT at
+# all before committing to the full finetune. Train on a small subset for few
+# epochs, then eval. Decision gate:
+#   - val accuracy climbs clearly above chance (~50% binary; ProsQA is a 2-way
+#     "X or Y" answer) and toward the CoT-GPT2 reference (77.5%) -> GREEN, run full.
+#   - stuck near chance after this probe -> STOP, diffusion-CoT transfer failed,
+#     reassess (more data/epochs, or the model can't do it).
+#
+# Everything mirrors the full config except max_samples + epochs + output_dir.
+
+### model
+model_name_or_path: gpt2-medium
+checkpoint_dir: ../models/diffugpt-m
+
+### method
+stage: ddm-sft
+do_train: true
+finetuning_type: full
+anneal_steps: 1
+shift: true
+remove_unused_columns: false   # keep src_mask column for the diffusion trainer
+
+### dataset
+dataset: prosqa_train
+eval_dataset: prosqa_valid
+template: empty
+cutoff_len: 640         # ProsQA p99 ~540, max ~660; confirm via --report before locking
+max_samples: 2000          # PROBE: small subset only
+overwrite_cache: true
+preprocessing_num_workers: 8
+
+### output
+output_dir: output/diffugpt-m-prosqa-probe
+logging_steps: 10
+save_steps: 200
+plot_loss: true
+overwrite_output_dir: true
+report_to: wandb
+run_name: diffugpt-m-prosqa-probe
+save_safetensors: false  # <-- ADD THIS LINE
+
+### train
+per_device_train_batch_size: 8
+gradient_accumulation_steps: 4
+learning_rate: 1.0e-5
+num_train_epochs: 5.0      # PROBE: few epochs
+lr_scheduler_type: cosine
+warmup_ratio: 0.03
+bf16: false           # RTX 8000 = Turing (sm_75), NO native bf16
+fp16: true            # Turing supports fp16 tensor cores
+ddp_timeout: 180000000
+
+### eval
+val_size: 0.0
+per_device_eval_batch_size: 8
+eval_strategy: steps
+eval_steps: 200

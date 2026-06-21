@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# --- DiffuGPT fix: apply the 4d-attention-mask patch in EVERY torchrun worker.
+# cli.py applies it at import, but FORCE_TORCHRUN re-spawns workers that run this
+# launcher directly and never import cli.py, so the patch must be applied here too.
+from llamafactory import attention_patch
+attention_patch.replace_attention_mask()
+
 from llamafactory.train.tuner import run_exp  # use absolute import
 
 

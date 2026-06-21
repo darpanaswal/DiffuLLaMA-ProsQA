@@ -605,5 +605,29 @@
       "prompt": "content"
     },
     "folder": "python"
+  },
+  "prosqa_train": {
+    "file_name": "prosqa_train.jsonl",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+  "prosqa_valid": {
+    "file_name": "prosqa_valid.jsonl",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+  "prosqa_test": {
+    "file_name": "prosqa_test.jsonl",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
   }
 }
