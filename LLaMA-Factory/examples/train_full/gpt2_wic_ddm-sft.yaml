@@ -1,0 +1,60 @@
+# LLaMA-Factory/examples/train_full/gpt2_wic_ddm-sft.yaml
+#
+# DiffuGPT-M diffusion SFT (ddm-sft) on Word-in-Context (WiC).
+# Mirrors gpt2_prosqa_ddm-sft.yaml. Key differences from ProsQA:
+#   - dataset -> wic_train / wic_valid (register in dataset_info.json)
+#   - cutoff_len -> 128  (WiC is 2 short sentences + a fixed answer phrase;
+#                         confirm with scripts/wic_to_diffusft.py --report — p99
+#                         should sit well under 128. ProsQA needed 640 for its
+#                         6-hop CoT; WiC has no chain so this is far smaller.)
+#   - num_train_epochs -> 15  (WiC train is only ~5.4k examples vs ProsQA's ~18k;
+#                              more passes to compensate. Watch eval for overfit.)
+# Keep anneal_steps=1 (base already bidirectional) and shift=true (DiffuGPT-M
+# predicts shifted, matching the attribution backend's predicts_shifted=True).
+
+### model
+model_name_or_path: gpt2-medium                       # AR base: config only
+checkpoint_dir: ../models/diffugpt-m
+
+### method
+stage: ddm-sft        # diffusion SFT (NOT ddm pre-training)
+do_train: true
+finetuning_type: full
+anneal_steps: 1       # no attention anneal for finetune; base is bidirectional
+shift: true           # DiffuGPT-M predicts in-shifted convention
+remove_unused_columns: false   # keep src_mask column for the diffusion trainer
+
+### dataset
+dataset: wic_train
+eval_dataset: wic_valid
+template: empty
+cutoff_len: 128         # WiC is short; confirm via --report before locking
+overwrite_cache: true
+preprocessing_num_workers: 8
+
+### output
+output_dir: output/diffugpt-m-wic
+logging_steps: 20
+save_steps: 500
+plot_loss: true
+overwrite_output_dir: true
+report_to: wandb
+run_name: diffugpt-m-wic-ddmsft
+save_safetensors: false
+
+### train
+per_device_train_batch_size: 8
+gradient_accumulation_steps: 4
+learning_rate: 1.0e-5
+num_train_epochs: 40.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.03
+bf16: false           # RTX 8000 = Turing (sm_75), NO native bf16
+fp16: true            # Turing supports fp16 tensor cores
+ddp_timeout: 180000000
+
+### eval
+val_size: 0.0         # use explicit eval_dataset (wic_valid) instead of a split
+per_device_eval_batch_size: 8
+eval_strategy: steps
+eval_steps: 500

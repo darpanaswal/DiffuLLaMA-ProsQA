@@ -96,10 +96,9 @@ def main():
             logger.info("Initializing distributed tasks at: {}:{}".format(master_addr, master_port))
             process = subprocess.run(
                 (
-                    "{python} -m torch.distributed.run --nnodes {nnodes} --node_rank {node_rank} --nproc_per_node {nproc_per_node} "
+                    "torchrun --nnodes {nnodes} --node_rank {node_rank} --nproc_per_node {nproc_per_node} "
                     "--master_addr {master_addr} --master_port {master_port} {file_name} {args}"
                 ).format(
-                    python=sys.executable,
                     nnodes=os.environ.get("NNODES", "1"),
                     node_rank=os.environ.get("RANK", "0"),
                     nproc_per_node=os.environ.get("NPROC_PER_NODE", str(get_device_count())),

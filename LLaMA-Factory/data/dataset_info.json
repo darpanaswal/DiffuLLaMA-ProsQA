@@ -629,5 +629,8 @@
       "query": "input",
       "response": "output"
     }
-  }
+  },
+
+"wic_train": {"file_name":"wic_train.jsonl","columns":{"prompt":"instruction","query":"input","response":"output"}},
+"wic_valid": {"file_name":"wic_valid.jsonl","columns":{"prompt":"instruction","query":"input","response":"output"}}
 }
