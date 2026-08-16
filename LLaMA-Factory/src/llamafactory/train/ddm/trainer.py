@@ -180,6 +180,10 @@ class CustomDiffusionTrainer(Trainer):
         # gradient is swamped; upweight it so training keeps optimizing it.
         # Opt-in: ANSWER_LOSS_WEIGHT=1.0 (default) leaves behaviour unchanged.
         _alw = float(os.environ.get("ANSWER_LOSS_WEIGHT", "1.0"))
+        if not hasattr(self, "_alw_logged"):
+            print(f"[ddm-sft] ANSWER_LOSS_WEIGHT={_alw} "
+                  f"({'ACTIVE' if _alw != 1.0 else 'inactive (=1.0)'})", flush=True)
+            self._alw_logged = True
         if _alw != 1.0:
             _hash_id = 21017  # "###"
             # x here is already shifted if self.diff_args.shift (x = x[:,1:]),

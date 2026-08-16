@@ -1,4 +1,5 @@
 import os
+import os
 import json
 import torch
 import numpy as np
@@ -172,8 +173,27 @@ class CustomDiffusionTrainer(Trainer):
 
 
         loss = loss.masked_fill(~loss_mask, 0)
-        
-        
+
+        # --- answer-token upweighting (WiC) ---------------------------------
+        # The label token (Yes/No) is the token right after "###" (id 21017).
+        # Once the format tokens are learned the loss flatlines and the label
+        # gradient is swamped; upweight it so training keeps optimizing it.
+        # Opt-in: ANSWER_LOSS_WEIGHT=1.0 (default) leaves behaviour unchanged.
+        _alw = float(os.environ.get("ANSWER_LOSS_WEIGHT", "1.0"))
+        if _alw != 1.0:
+            _hash_id = 21017  # "###"
+            # x here is already shifted if self.diff_args.shift (x = x[:,1:]),
+            # so x aligns with logits/loss positions. Answer token = position
+            # immediately following a "###" token in the (shifted) targets.
+            _is_hash = (x == _hash_id)
+            _ans_pos = torch.zeros_like(loss, dtype=torch.bool)
+            _ans_pos[:, 1:] = _is_hash[:, :-1]   # one position after "###"
+            _ans_pos = _ans_pos & loss_mask       # only where loss is active
+            _w = torch.ones_like(loss)
+            _w = _w.masked_fill(_ans_pos, _alw)
+            loss = loss * _w
+        # --------------------------------------------------------------------
+
         final_loss = (dsigma[:, None] * loss).sum() / loss_mask.sum()   # avg token loss
         unweighted_loss = (loss).sum() / loss_mask.sum()
         
